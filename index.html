@@ -449,20 +449,9 @@ tr.row-priority td:first-child { border-left: 3px solid #fbbf24 !important; }
     <div class="modal">
       <div class="modal-title">Добавить вакансию</div>
       <div class="modal-field">
-        <label class="modal-label">Ссылка</label>
-        <input class="modal-input" id="m-url" type="url" placeholder="https://linkedin.com/...">
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Название вакансии</label>
-        <input class="modal-input" id="m-title" type="text" placeholder="Product Designer">
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Компания</label>
-        <input class="modal-input" id="m-company" type="text" placeholder="Название компании">
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Источник</label>
-        <input class="modal-input" id="m-source" type="text" placeholder="LinkedIn, hh.ru, ...">
+        <label class="modal-label">Ссылка *</label>
+        <input class="modal-input" id="m-url" type="url" placeholder="https://hh.ru/vacancy/... или LinkedIn">
+        <div id="m-fetch-status" style="margin-top:8px;font-size:12px;color:#8e8e93;min-height:18px;"></div>
       </div>
       <div class="modal-field">
         <label class="modal-label">Заметка</label>
@@ -1050,12 +1039,71 @@ const jobMap = {};
   const save   = document.getElementById('addModalSave');
   if (!btn || !modal) return;
 
+  // Данные автоподтягивания
+  let fetchedData = null; // { title, company, source }
+
+  function setStatus(msg, ok) {
+    const el = document.getElementById('m-fetch-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = ok === true ? '#22c55e' : ok === false ? '#ff3b30' : '#8e8e93';
+  }
+
+  function sourceFromUrl(url) {
+    try {
+      const host = new URL(url).hostname.replace('www.', '');
+      if (host.includes('linkedin'))  return 'LinkedIn';
+      if (host.includes('hh.ru'))     return 'hh.ru';
+      if (host.includes('habr'))      return 'Habr Career';
+      if (host.includes('getmatch'))  return 'getmatch';
+      if (host.includes('hirehi'))    return 'HireHi';
+      if (host.includes('telegram'))  return 'Telegram';
+      return host;
+    } catch { return '' }
+  }
+
+  // Автоподтягивание по ссылке
+  let fetchTimer = null;
+  document.getElementById('m-url').addEventListener('input', function() {
+    fetchedData = null;
+    clearTimeout(fetchTimer);
+    const url = this.value.trim();
+    if (!url) { setStatus(''); return; }
+
+    // hh.ru — есть открытый API
+    const hhMatch = url.match(/hh\.ru\/vacancy\/(\d+)/);
+    if (hhMatch) {
+      setStatus('⏳ Загружаю данные с hh.ru…');
+      fetchTimer = setTimeout(async () => {
+        try {
+          const res = await fetch('https://api.hh.ru/vacancies/' + hhMatch[1]);
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          fetchedData = {
+            title:   data.name || '',
+            company: data.employer?.name || '',
+            source:  'hh.ru',
+          };
+          setStatus('✓ ' + fetchedData.title + (fetchedData.company ? ' · ' + fetchedData.company : ''), true);
+        } catch {
+          setStatus('Не удалось загрузить — добавлю ссылку без названия', false);
+          fetchedData = { title: '', company: '', source: 'hh.ru' };
+        }
+      }, 600);
+      return;
+    }
+
+    // Остальные сайты — только источник из домена
+    const src = sourceFromUrl(url);
+    fetchedData = { title: '', company: '', source: src };
+    setStatus(src ? 'Источник: ' + src : '');
+  });
+
   function openModal() {
-    document.getElementById('m-url').value     = '';
-    document.getElementById('m-title').value   = '';
-    document.getElementById('m-company').value = '';
-    document.getElementById('m-source').value  = 'LinkedIn';
-    document.getElementById('m-note').value    = '';
+    document.getElementById('m-url').value  = '';
+    document.getElementById('m-note').value = '';
+    setStatus('');
+    fetchedData = null;
     modal.classList.add('open');
     setTimeout(() => document.getElementById('m-url').focus(), 100);
   }
@@ -1065,34 +1113,23 @@ const jobMap = {};
   cancel.addEventListener('click', closeModal);
   modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
-  document.getElementById('m-url').addEventListener('input', function() {
-    const titleInp = document.getElementById('m-title');
-    if (titleInp.value) return;
-    try {
-      const host = new URL(this.value).hostname.replace('www.','');
-      if (host.includes('linkedin'))     document.getElementById('m-source').value = 'LinkedIn';
-      else if (host.includes('hh.ru'))   document.getElementById('m-source').value = 'hh.ru';
-      else if (host.includes('habr'))    document.getElementById('m-source').value = 'Habr Career';
-      else if (host.includes('getmatch'))document.getElementById('m-source').value = 'getmatch';
-    } catch(e) {}
-  });
-
   save.addEventListener('click', () => {
-    const url     = document.getElementById('m-url').value.trim();
-    const title   = document.getElementById('m-title').value.trim();
-    const company = document.getElementById('m-company').value.trim();
-    const source  = document.getElementById('m-source').value.trim() || 'LinkedIn';
-    const note    = document.getElementById('m-note').value.trim();
+    const url  = document.getElementById('m-url').value.trim();
+    const note = document.getElementById('m-note').value.trim();
 
-    if (!title && !url) { document.getElementById('m-title').focus(); return; }
+    if (!url) { document.getElementById('m-url').focus(); setStatus('Вставь ссылку', false); return; }
 
-    const key = url || ('manual-' + Date.now());
-    const PK  = 'designJobs.pipeline.v1';
+    const key    = url;
+    const title  = fetchedData?.title  || '';
+    const company= fetchedData?.company|| '';
+    const source = fetchedData?.source || sourceFromUrl(url);
+
+    const PK = 'designJobs.pipeline.v1';
     let pl = {};
     try { pl = JSON.parse(localStorage.getItem(PK) || '{}'); } catch(e) {}
     pl[key] = {
       title:   title || url,
-      source:  source,
+      source:  source || undefined,
       company: company || undefined,
       note:    note || undefined,
       addedAt: new Date().toISOString().slice(0,10),
@@ -1103,9 +1140,7 @@ const jobMap = {};
     if (typeof window.goToTrackerRow === 'function') window.goToTrackerRow(key);
   });
 
-  [document.getElementById('m-url'), document.getElementById('m-title'),
-   document.getElementById('m-company'), document.getElementById('m-source'),
-   document.getElementById('m-note')].forEach(inp => {
+  [document.getElementById('m-url'), document.getElementById('m-note')].forEach(inp => {
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') save.click(); });
   });
 })();
