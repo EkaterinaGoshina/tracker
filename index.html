@@ -11,6 +11,68 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Трекер откликов</title>
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCf95RNXb_Nu659KJljVxXbL7Fk9VN8HjI",
+    authDomain: "tracker-jobs.firebaseapp.com",
+    projectId: "tracker-jobs",
+    storageBucket: "tracker-jobs.firebasestorage.app",
+    messagingSenderId: "307964371204",
+    appId: "1:307964371204:web:8bbafe52bf54c895403051"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const DOC = doc(db, 'tracker', 'data');
+
+  const PK = 'designJobs.pipeline.v1';
+  const SK = 'designJobs.status.v1';
+
+  let syncing = false;
+
+  // Загружаем данные из Firebase при старте
+  getDoc(DOC).then(snap => {
+    if (snap.exists()) {
+      const remote = snap.data();
+      // Мержим: удалённые данные приоритетнее если они новее
+      if (remote.pipeline) localStorage.setItem(PK, JSON.stringify(remote.pipeline));
+      if (remote.status)   localStorage.setItem(SK, JSON.stringify(remote.status));
+    }
+    if (typeof window.renderTracker === 'function') window.renderTracker();
+  }).catch(() => {});
+
+  // Слушаем изменения из Firebase (синк с другого устройства)
+  onSnapshot(DOC, snap => {
+    if (!snap.exists() || syncing) return;
+    const remote = snap.data();
+    if (remote.pipeline) localStorage.setItem(PK, JSON.stringify(remote.pipeline));
+    if (remote.status)   localStorage.setItem(SK, JSON.stringify(remote.status));
+    if (typeof window.renderTracker === 'function') window.renderTracker();
+  });
+
+  // Сохраняем в Firebase при каждом изменении localStorage
+  function pushToFirebase() {
+    syncing = true;
+    const pipeline = JSON.parse(localStorage.getItem(PK) || '{}');
+    const status   = JSON.parse(localStorage.getItem(SK)  || '{}');
+    setDoc(DOC, { pipeline, status, updatedAt: Date.now() })
+      .catch(() => {})
+      .finally(() => { syncing = false; });
+  }
+
+  // Перехватываем изменения localStorage
+  const _setItem = localStorage.setItem.bind(localStorage);
+  localStorage.setItem = function(key, value) {
+    _setItem(key, value);
+    if (key === PK || key === SK) pushToFirebase();
+  };
+
+  window.__firebasePush = pushToFirebase;
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
