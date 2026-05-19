@@ -1099,19 +1099,25 @@ const jobMap = {};
     setStatus(src ? 'Источник: ' + src : '');
   });
 
-  function openModal() {
+  function clearModal() {
     document.getElementById('m-url').value  = '';
     document.getElementById('m-note').value = '';
     setStatus('');
     fetchedData = null;
+  }
+
+  function openModal() {
+    // Не чистим поля — данные сохраняются при случайном закрытии
     modal.classList.add('open');
     setTimeout(() => document.getElementById('m-url').focus(), 100);
   }
   function closeModal() { modal.classList.remove('open'); }
 
   btn.addEventListener('click', openModal);
+  // Случайное закрытие (клик снаружи или Escape) — данные остаются
   cancel.addEventListener('click', closeModal);
   modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
 
   save.addEventListener('click', () => {
     const url  = document.getElementById('m-url').value.trim();
@@ -1123,18 +1129,21 @@ const jobMap = {};
     const title  = fetchedData?.title  || '';
     const company= fetchedData?.company|| '';
     const source = fetchedData?.source || sourceFromUrl(url);
+    const today  = new Date().toISOString().slice(0,10);
 
     const PK = 'designJobs.pipeline.v1';
     let pl = {};
     try { pl = JSON.parse(localStorage.getItem(PK) || '{}'); } catch(e) {}
     pl[key] = {
-      title:   title || url,
-      source:  source || undefined,
-      company: company || undefined,
-      note:    note || undefined,
-      addedAt: new Date().toISOString().slice(0,10),
+      title:        title || url,
+      source:       source || undefined,
+      company:      company || undefined,
+      note:         note || undefined,
+      appliedDate:  today,   // автоматически ставим дату отклика
+      addedAt:      today,
     };
     localStorage.setItem(PK, JSON.stringify(pl));
+    clearModal(); // чистим только после успешного сохранения
     closeModal();
     if (typeof window.renderTracker === 'function') window.renderTracker();
     if (typeof window.goToTrackerRow === 'function') window.goToTrackerRow(key);
