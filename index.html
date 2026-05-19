@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Трекер">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Трекер откликов</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -369,9 +376,28 @@ tr.row-priority td:first-child { border-left: 3px solid #fbbf24 !important; }
 .tracker-search-clr:hover { color: #ff3b30; }
 .tracker-search-clr.visible { display: block; }
 
+/* ===== FAB (плавающая кнопка + на мобиле) ===== */
+.fab {
+  display: none;
+}
+@media (max-width: 600px) {
+  .fab {
+    display: flex; align-items: center; justify-content: center;
+    position: fixed; bottom: 24px; right: 20px; z-index: 200;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #5c6eff; color: #fff; border: none;
+    box-shadow: 0 4px 16px rgba(92,110,255,0.45);
+    font-size: 28px; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .fab:active { transform: scale(0.93); box-shadow: 0 2px 8px rgba(92,110,255,0.35); }
+  /* Скрываем кнопку «Добавить» в шапке на мобиле — вместо неё FAB */
+  .add-btn { display: none; }
+}
+
 /* ===== MOBILE ===== */
 @media (max-width: 600px) {
-  body { padding: 0 0 20px; background: #f2f2f7; font-size: 15px; }
+  body { padding: 0 0 90px; background: #f2f2f7; font-size: 15px; }
   .pl-header { padding: 12px 16px 10px; }
   .stat-cards { padding: 0 12px 12px; }
   .charts-wrap { gap: 14px; flex-direction: column; }
@@ -498,6 +524,9 @@ tr.row-priority td:first-child { border-left: 3px solid #fbbf24 !important; }
   <div id="date-pool" style="position:absolute;opacity:0;width:0;height:0;overflow:hidden;pointer-events:none"></div>
 
 </div><!-- /panel-tracker -->
+
+<!-- FAB: плавающая кнопка + только на мобиле -->
+<button class="fab" id="fabBtn" aria-label="Добавить вакансию">+</button>
 
 <script>
 'use strict';
@@ -1152,7 +1181,18 @@ const jobMap = {};
   [document.getElementById('m-url'), document.getElementById('m-note')].forEach(inp => {
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') save.click(); });
   });
+
+  // FAB — та же кнопка «Добавить», только плавающая на мобиле
+  const fab = document.getElementById('fabBtn');
+  if (fab) fab.addEventListener('click', openModal);
 })();
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/tracker/sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
