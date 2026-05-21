@@ -541,6 +541,16 @@ tr.row-priority td:first-child { border-left: 3px solid #fbbf24 !important; }
         <input class="modal-input" id="m-url" type="url" placeholder="https://hh.ru/vacancy/... или LinkedIn">
         <div id="m-fetch-status" style="margin-top:8px;font-size:12px;color:#8e8e93;min-height:18px;"></div>
       </div>
+      <div id="m-manual-fields" style="display:none">
+        <div class="modal-field">
+          <label class="modal-label">Название вакансии</label>
+          <input class="modal-input" id="m-title" type="text" placeholder="Например: Product Designer">
+        </div>
+        <div class="modal-field">
+          <label class="modal-label">Компания</label>
+          <input class="modal-input" id="m-company" type="text" placeholder="Название компании">
+        </div>
+      </div>
       <div class="modal-field">
         <label class="modal-label">Заметка</label>
         <input class="modal-input" id="m-note" type="text" placeholder="Необязательно">
@@ -1168,6 +1178,7 @@ const jobMap = {};
       fetchTimer = setTimeout(async () => {
         try {
           const res = await fetch('https://api.hh.ru/vacancies/' + hhMatch[1]);
+          if (res.status === 404) throw new Error('archived');
           if (!res.ok) throw new Error();
           const data = await res.json();
           fetchedData = {
@@ -1175,10 +1186,16 @@ const jobMap = {};
             company: data.employer?.name || '',
             source:  'hh.ru',
           };
+          document.getElementById('m-manual-fields').style.display = 'none';
           setStatus('✓ ' + fetchedData.title + (fetchedData.company ? ' · ' + fetchedData.company : ''), true);
-        } catch {
-          setStatus('Не удалось загрузить — добавлю ссылку без названия', false);
+        } catch(err) {
           fetchedData = { title: '', company: '', source: 'hh.ru' };
+          const msg = err.message === 'archived'
+            ? 'Вакансия архивирована — введи название вручную'
+            : 'Не удалось загрузить — введи название вручную';
+          setStatus(msg, false);
+          document.getElementById('m-manual-fields').style.display = 'block';
+          setTimeout(() => document.getElementById('m-title').focus(), 50);
         }
       }, 600);
       return;
@@ -1191,8 +1208,11 @@ const jobMap = {};
   });
 
   function clearModal() {
-    document.getElementById('m-url').value  = '';
-    document.getElementById('m-note').value = '';
+    document.getElementById('m-url').value     = '';
+    document.getElementById('m-note').value    = '';
+    document.getElementById('m-title').value   = '';
+    document.getElementById('m-company').value = '';
+    document.getElementById('m-manual-fields').style.display = 'none';
     setStatus('');
     fetchedData = null;
   }
@@ -1216,10 +1236,12 @@ const jobMap = {};
 
     if (!url) { document.getElementById('m-url').focus(); setStatus('Вставь ссылку', false); return; }
 
-    const key    = url;
-    const title  = fetchedData?.title  || '';
-    const company= fetchedData?.company|| '';
-    const source = fetchedData?.source || sourceFromUrl(url);
+    const key     = url;
+    const manualTitle   = document.getElementById('m-title')?.value.trim() || '';
+    const manualCompany = document.getElementById('m-company')?.value.trim() || '';
+    const title   = fetchedData?.title   || manualTitle  || '';
+    const company = fetchedData?.company || manualCompany || '';
+    const source  = fetchedData?.source  || sourceFromUrl(url);
     const today  = new Date().toISOString().slice(0,10);
 
     const PK = 'designJobs.pipeline.v1';
