@@ -190,8 +190,8 @@ body {
 .job-card.card-test-got  { background: #eef0ff; border-left: 3px solid #5c6eff; }
 .job-card.card-test-doing { background: #fff8e6; border-left: 3px solid #f59e0b; }
 .job-card.card-test-sent { background: #f0fdf4; border-left: 3px solid #22c55e; }
-.job-card.card-priority { box-shadow: 0 0 0 2px #ffd60a, 0 2px 8px rgba(0,0,0,0.06); }
-.job-card.card-priority.card-offer { box-shadow: 0 0 0 2px #ffd60a, 0 2px 8px rgba(0,0,0,0.06); }
+.job-card.card-priority { background: #fffdf0; }
+.job-card.card-priority.card-offer { background: #f0faf0; }
 
 @keyframes cardFlash {
   0%   { box-shadow: 0 0 0 3px #ffd60a, 0 4px 20px rgba(255,214,10,0.5); }
@@ -209,6 +209,7 @@ body {
   font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
 }
 .card-applied-date { font-size: 11px; color: #aeaeb2; white-space: nowrap; flex-shrink: 0; }
+.card-star { font-size: 13px; color: #f59e0b; flex-shrink: 0; line-height: 1; }
 .card-bottom-row {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;
 }
@@ -1240,6 +1241,7 @@ const jobMap = {};
         '<div class="card-top-row">'+
           '<div class="card-avatar" style="background:'+color+'">'+plEsc(avatarLetter)+'</div>'+
           '<span class="card-company-name">'+plEsc(displayName || r.source || '—')+'</span>'+
+          (p.priority ? '<span class="card-star">★</span>' : '')+
           (appliedDateStr ? '<span class="card-applied-date">'+plEsc(appliedDateStr)+'</span>' : '')+
         '</div>'+
         '<div class="card-spacer"></div>'+
