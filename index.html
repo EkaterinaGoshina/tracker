@@ -1042,7 +1042,18 @@ const jobMap = {};
 
     const pl    = plLs(PK);
     const allPl = plLs(PK);
-    rows.sort((a, b) => ((allPl[b.url]||{}).priority ? 1 : 0) - ((allPl[a.url]||{}).priority ? 1 : 0));
+    rows.sort((a, b) => {
+      const pa = allPl[a.url] || {}, pb = allPl[b.url] || {};
+      // 1. Приоритетные выше обычных
+      const prioA = pa.priority ? 1 : 0, prioB = pb.priority ? 1 : 0;
+      if (prioB !== prioA) return prioB - prioA;
+      // 2. Внутри группы — новее (по дате отклика или добавления) сверху
+      const dateA = pa.appliedDate || pa.addedAt || '';
+      const dateB = pb.appliedDate || pb.addedAt || '';
+      if (dateB > dateA) return 1;
+      if (dateA > dateB) return -1;
+      return 0;
+    });
 
     const total   = allRows.length;
     const offers  = allRows.filter(r => (allPl[r.url]||{}).result === 'offer').length;
