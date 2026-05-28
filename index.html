@@ -170,8 +170,10 @@ body {
   background: #fff; border: 1px solid #e5e5ea; border-radius: 16px;
   padding: 14px 16px; cursor: pointer;
   display: flex; flex-direction: column; gap: 6px;
-  transition: box-shadow 0.15s, border-color 0.15s; min-height: 110px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  height: 185px; /* фиксированная высота — все карточки одинаковые */
 }
+.card-spacer { flex: 1; } /* пустое пространство посередине */
 .job-card:hover { border-color: #c7c7cc; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
 .job-card.card-offer { background: #f0faf0; border-color: #b2dfdb; }
 .job-card.card-reject { opacity: 0.45; }
@@ -1219,13 +1221,18 @@ const jobMap = {};
 
       const sourceBadge = r.source ? '<span class="card-badge card-badge-source">'+plEsc(plSrcLabel(r.source))+'</span>' : '';
 
+      // Обрезаем URL до читаемого вида если title — это URL
+      const rawTitle = p.title || r.title || r.url;
+      const displayTitle = rawTitle.startsWith('http') ? (p.company || r.source || rawTitle) : rawTitle;
+
       return '<div class="'+cardCls+'" data-url="'+plEsc(r.url)+'">'+
         '<div class="card-top-row">'+
           '<div class="card-avatar" style="background:'+color+'">'+plEsc(avatarLetter)+'</div>'+
           '<span class="card-company-name">'+plEsc(displayName || r.source || '—')+'</span>'+
           (appliedDateStr ? '<span class="card-applied-date">'+plEsc(appliedDateStr)+'</span>' : '')+
         '</div>'+
-        '<div class="card-title">'+plEsc(p.title || r.title || r.url)+'</div>'+
+        '<div class="card-spacer"></div>'+
+        '<div class="card-title">'+plEsc(displayTitle)+'</div>'+
         '<div class="card-bottom-row">'+sourceBadge+statusBadge+'</div>'+
       '</div>';
     }).join('');
