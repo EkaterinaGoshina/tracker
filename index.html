@@ -327,7 +327,7 @@ body {
   border-radius: 20px 20px 0 0;
 }
 .detail-header-info { flex: 1; min-width: 0; }
-.detail-header-title { font-size: 17px; font-weight: 700; color: #1a1a1a; line-height: 1.3; word-break: break-word; }
+.detail-header-title { font-size: 17px; font-weight: 700; color: #1a1a1a; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-all; }
 .detail-header-sub {
   margin-top: 4px; font-size: 12px; color: #8e8e93;
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -783,7 +783,10 @@ const jobMap = {};
     const p = plLs(PK)[detailUrl] || {};
     const allRows = getRows();
     const r = allRows.find(x => x.url === detailUrl) || { url: detailUrl, title: detailUrl, source: '' };
-    const displayTitle = p.title || r.title || detailUrl;
+    const rawTitle2 = p.title || r.title || detailUrl;
+    const displayTitle = rawTitle2.startsWith('http')
+      ? (p.company || source || (() => { try { return new URL(rawTitle2).hostname.replace('www.',''); } catch { return rawTitle2; } })())
+      : rawTitle2;
     const company = p.company || '';
     const source = p.source || r.source || '';
 
