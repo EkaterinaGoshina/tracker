@@ -745,12 +745,6 @@ const jobMap = {};
     });
   })();
 
-  // Единый клик-обработчик — вешается один раз, не теряется при ре-рендере карточек
-  document.addEventListener('click', e => {
-    const card = e.target.closest('#cards-grid .job-card');
-    if (!card || !card.dataset.url) return;
-    try { openDetail(card.dataset.url); } catch(err) { console.error('openDetail error:', err); }
-  });
 
   let donutChart = null;
   let chartFilter = null;
@@ -1250,7 +1244,7 @@ const jobMap = {};
       const rawTitle = String(p.title || r.title || r.url || '');
       const displayTitle = rawTitle.startsWith('http') ? (p.company || r.source || rawTitle) : rawTitle;
 
-      return '<div class="'+cardCls+'" data-url="'+plEsc(r.url)+'">'+
+      return '<div class="'+cardCls+'" data-url="'+plEsc(r.url)+'" onclick="window.__openDetail(this.dataset.url)">'+
         '<div class="card-top-row">'+
           '<div class="card-avatar" style="background:'+color+'">'+plEsc(avatarLetter)+'</div>'+
           '<span class="card-company-name">'+plEsc(displayName || r.source || '—')+'</span>'+
@@ -1266,6 +1260,9 @@ const jobMap = {};
   }
 
   window.renderTracker = renderTracker;
+  window.__openDetail = function(url) {
+    try { openDetail(url); } catch(e) { console.error(e); }
+  };
 
   window.goToTrackerRow = function(url) {
     setTimeout(() => {
