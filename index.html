@@ -745,6 +745,13 @@ const jobMap = {};
     });
   })();
 
+  // Единый клик-обработчик — вешается один раз, не теряется при ре-рендере карточек
+  document.addEventListener('click', e => {
+    const card = e.target.closest('#cards-grid .job-card');
+    if (!card || !card.dataset.url) return;
+    try { openDetail(card.dataset.url); } catch(err) { console.error('openDetail error:', err); }
+  });
+
   let donutChart = null;
   let chartFilter = null;
 
@@ -1256,12 +1263,6 @@ const jobMap = {};
       '</div>';
     }).join('');
 
-    // Event delegation — один обработчик на весь grid, не теряется при ре-рендере
-    grid.onclick = e => {
-      const card = e.target.closest('.job-card');
-      if (!card || !card.dataset.url) return;
-      try { openDetail(card.dataset.url); } catch(err) { console.error('openDetail error:', err); }
-    };
   }
 
   window.renderTracker = renderTracker;
