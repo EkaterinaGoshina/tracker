@@ -514,6 +514,91 @@ body {
 .tracker-search-clr:hover { color: #ff3b30; }
 .tracker-search-clr.visible { display: block; }
 
+/* ===== REMINDER BELL ===== */
+.remind-btn {
+  position: relative; background: #f0f0f4; border: none; border-radius: 10px;
+  width: 36px; height: 36px; cursor: pointer; font-size: 17px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s; flex-shrink: 0;
+}
+.remind-btn:hover { background: #e5e5ea; }
+.remind-btn.remind-active { background: #fff8e0; }
+.remind-badge {
+  position: absolute; top: -4px; right: -4px;
+  background: #ff3b30; color: #fff; font-size: 10px; font-weight: 700;
+  min-width: 16px; height: 16px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 3px; border: 2px solid #f5f5f7; line-height: 1;
+}
+.remind-modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.4); align-items: center; justify-content: center;
+}
+.remind-modal-overlay.open { display: flex; }
+.remind-modal {
+  background: #fff; border-radius: 20px; padding: 24px;
+  width: 100%; max-width: 360px; margin: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: modalIn 0.2s ease;
+}
+.remind-modal-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.remind-modal-desc { font-size: 13px; color: #6e6e73; margin-bottom: 18px; line-height: 1.5; }
+.remind-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #f0f0f4;
+}
+.remind-toggle-label { font-size: 15px; font-weight: 600; }
+.toggle-switch { position: relative; width: 48px; height: 28px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-slider {
+  position: absolute; inset: 0; background: #e5e5ea;
+  border-radius: 999px; cursor: pointer; transition: background 0.2s;
+}
+.toggle-slider:before {
+  content: ''; position: absolute;
+  width: 22px; height: 22px; left: 3px; top: 3px;
+  background: #fff; border-radius: 50%;
+  transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle-switch input:checked + .toggle-slider { background: #34c759; }
+.toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+.remind-section-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: #8e8e93; margin-bottom: 8px; font-weight: 600;
+}
+.remind-days-row { display: flex; gap: 8px; margin-bottom: 18px; }
+.remind-day-chip {
+  flex: 1; padding: 9px 4px; border: 1.5px solid #e5e5ea;
+  border-radius: 10px; background: #f5f5f7; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 600; color: #3a3a3c;
+  text-align: center; transition: all 0.15s;
+}
+.remind-day-chip:hover { border-color: #c7c7cc; background: #fff; }
+.remind-day-chip.selected { background: #0a84ff; border-color: #0a84ff; color: #fff; }
+.remind-perm-btn {
+  width: 100%; padding: 10px; background: #fff8e0; border: 1.5px solid #fde68a;
+  border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 600;
+  color: #92400e; cursor: pointer; margin-bottom: 14px; transition: background 0.15s;
+}
+.remind-perm-btn:hover { background: #fef3c7; }
+.remind-followup-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid #f0f0f4;
+}
+.remind-followup-item:last-child { border-bottom: none; }
+.remind-fu-name {
+  font-size: 13px; font-weight: 600; color: #1a1a1a; flex: 1;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.remind-fu-days { font-size: 11px; color: #ff9500; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.remind-modal-footer { display: flex; justify-content: flex-end; margin-top: 18px; }
+.remind-close-btn {
+  background: #f0f0f4; border: none; border-radius: 10px;
+  padding: 9px 20px; font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; color: #3a3a3c;
+}
+.remind-close-btn:hover { background: #e5e5ea; }
+
 /* ===== FAB ===== */
 .fab { display: none; }
 @media (max-width: 600px) {
@@ -551,6 +636,10 @@ body {
   <div class="pl-header">
     <div class="pl-title">Трекер откликов</div>
     <span class="count-badge" id="cnt">0</span>
+    <button class="remind-btn" id="remindBtn" title="Напоминания о тишине">
+      🔔
+      <span class="remind-badge" id="remindBadge" style="display:none">0</span>
+    </button>
     <button class="add-btn" id="addVacancyBtn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Добавить
@@ -583,6 +672,44 @@ body {
       <div class="modal-actions">
         <button class="modal-cancel" id="addModalCancel">Отмена</button>
         <button class="modal-save" id="addModalSave">Добавить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: reminders -->
+  <div class="remind-modal-overlay" id="remindModal">
+    <div class="remind-modal">
+      <div class="remind-modal-title">🔔 Напоминания о тишине</div>
+      <div class="remind-modal-desc">Уведомлю, если компания не ответила после отклика</div>
+
+      <div class="remind-toggle-row">
+        <span class="remind-toggle-label">Включить уведомления</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="remindToggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div id="remindSettingsSection">
+        <div class="remind-section-label">Уведомить через</div>
+        <div class="remind-days-row">
+          <button class="remind-day-chip" data-days="7">7 дней</button>
+          <button class="remind-day-chip" data-days="10">10 дней</button>
+          <button class="remind-day-chip" data-days="14">14 дней</button>
+        </div>
+      </div>
+
+      <div id="remindPermSection" style="display:none">
+        <button class="remind-perm-btn" id="remindPermBtn">⚠️ Разрешить уведомления в браузере</button>
+      </div>
+
+      <div id="remindFollowupSection" style="display:none">
+        <div class="remind-section-label">Ждут ответа уже давно</div>
+        <div id="remindFollowupItems"></div>
+      </div>
+
+      <div class="remind-modal-footer">
+        <button class="remind-close-btn" id="remindClose">Закрыть</button>
       </div>
     </div>
   </div>
@@ -1421,6 +1548,196 @@ const jobMap = {};
 
   const fab = document.getElementById('fabBtn');
   if (fab) fab.addEventListener('click', openModal);
+})();
+
+// ===== FOLLOW-UP REMINDERS =====
+(function() {
+  const REMIND_KEY = 'designJobs.remind.v1';
+  const PK = 'designJobs.pipeline.v1';
+
+  function loadSettings() {
+    try { return JSON.parse(localStorage.getItem(REMIND_KEY)) || {}; } catch { return {}; }
+  }
+  function saveSettings(s) {
+    // прямой вызов нативного setItem, чтобы не триггерить Firebase-синк
+    const native = localStorage.__nativeSetItem || localStorage.setItem.bind(localStorage);
+    try { native(REMIND_KEY, JSON.stringify(s)); } catch { localStorage.setItem(REMIND_KEY, JSON.stringify(s)); }
+  }
+  function loadPL() {
+    try { return JSON.parse(localStorage.getItem(PK)) || {}; } catch { return {}; }
+  }
+
+  // Возвращает список вакансий, превысивших порог молчания
+  function getSilentVacancies(thresholdDays) {
+    const pl = loadPL();
+    const now = Date.now();
+    const threshold = thresholdDays * 24 * 60 * 60 * 1000;
+    const result = [];
+    for (const [url, p] of Object.entries(pl)) {
+      if (!p.appliedDate) continue;
+      if (p.result === 'offer' || p.result === 'reject') continue;
+      const appliedTs = new Date(p.appliedDate + 'T00:00:00').getTime();
+      const elapsed = now - appliedTs;
+      if (elapsed < threshold) continue;
+      const daysAgo = Math.floor(elapsed / (24 * 60 * 60 * 1000));
+      const name = p.company || p.title || url;
+      result.push({ url, name, daysAgo, appliedTs });
+    }
+    result.sort((a, b) => b.daysAgo - a.daysAgo);
+    return result;
+  }
+
+  // Обновляет бейдж на колокольчике
+  function updateBadge() {
+    const s = loadSettings();
+    const days = s.days || 7;
+    const btn = document.getElementById('remindBtn');
+    const badge = document.getElementById('remindBadge');
+    if (!btn || !badge) return;
+    const silent = getSilentVacancies(days);
+    if (silent.length > 0) {
+      badge.textContent = silent.length;
+      badge.style.display = 'flex';
+      btn.classList.add('remind-active');
+    } else {
+      badge.style.display = 'none';
+      btn.classList.remove('remind-active');
+    }
+  }
+
+  // Отправляет браузерные уведомления
+  function checkAndNotify() {
+    const s = loadSettings();
+    if (!s.enabled) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const days = s.days || 7;
+    const notified = s.notified || {};
+    const now = Date.now();
+    const renotifyAfter = days * 24 * 60 * 60 * 1000; // не чаще чем раз в N дней
+
+    const silent = getSilentVacancies(days);
+    let changed = false;
+    for (const { url, name, daysAgo } of silent) {
+      const lastNotified = notified[url] || 0;
+      if (lastNotified && (now - lastNotified) < renotifyAfter) continue;
+      try {
+        new Notification('⏰ Нет ответа от ' + name, {
+          body: 'Прошло ' + daysAgo + ' дн. — пора написать снова?',
+          icon: '/tracker/icon-192.png',
+          tag: 'remind-' + encodeURIComponent(url),
+        });
+        notified[url] = now;
+        changed = true;
+      } catch(e) {}
+    }
+    if (changed) { s.notified = notified; saveSettings(s); }
+  }
+
+  // Рендер списка молчунов в модалке
+  function renderFollowupList(days) {
+    const section = document.getElementById('remindFollowupSection');
+    const list = document.getElementById('remindFollowupItems');
+    if (!section || !list) return;
+    const silent = getSilentVacancies(days);
+    if (silent.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    list.innerHTML = silent.slice(0, 8).map(({ name, daysAgo }) =>
+      '<div class="remind-followup-item">' +
+        '<span class="remind-fu-name">' + name.replace(/</g,'&lt;') + '</span>' +
+        '<span class="remind-fu-days">' + daysAgo + ' дн.</span>' +
+      '</div>'
+    ).join('');
+  }
+
+  // Обновить UI модалки под текущие настройки
+  function refreshModalUI() {
+    const s = loadSettings();
+    const toggle = document.getElementById('remindToggle');
+    if (toggle) toggle.checked = !!s.enabled;
+
+    // подсветить активный чип с днями
+    const days = s.days || 7;
+    document.querySelectorAll('.remind-day-chip').forEach(chip => {
+      chip.classList.toggle('selected', parseInt(chip.dataset.days) === days);
+    });
+
+    // блок разрешения
+    const permSection = document.getElementById('remindPermSection');
+    if (permSection) {
+      const needPerm = 'Notification' in window && Notification.permission !== 'granted';
+      permSection.style.display = (s.enabled && needPerm) ? 'block' : 'none';
+    }
+
+    renderFollowupList(days);
+  }
+
+  // ===== UI: открытие/закрытие =====
+  const overlay = document.getElementById('remindModal');
+  const openBtn = document.getElementById('remindBtn');
+  const closeBtn = document.getElementById('remindClose');
+
+  function openModal() { if (overlay) { overlay.classList.add('open'); refreshModalUI(); } }
+  function closeModal() { if (overlay) overlay.classList.remove('open'); }
+
+  if (openBtn) openBtn.addEventListener('click', openModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+  // Тогл вкл/выкл
+  const toggle = document.getElementById('remindToggle');
+  if (toggle) {
+    toggle.addEventListener('change', async function() {
+      const s = loadSettings();
+      s.enabled = this.checked;
+      if (s.enabled && 'Notification' in window && Notification.permission !== 'granted') {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') { this.checked = false; s.enabled = false; }
+      }
+      saveSettings(s);
+      refreshModalUI();
+      updateBadge();
+      if (s.enabled) checkAndNotify();
+    });
+  }
+
+  // Чипы с днями
+  document.querySelectorAll('.remind-day-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      const s = loadSettings();
+      s.days = parseInt(this.dataset.days);
+      saveSettings(s);
+      refreshModalUI();
+      updateBadge();
+    });
+  });
+
+  // Кнопка разрешить
+  const permBtn = document.getElementById('remindPermBtn');
+  if (permBtn) {
+    permBtn.addEventListener('click', async () => {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        const s = loadSettings();
+        s.enabled = true;
+        saveSettings(s);
+        const t = document.getElementById('remindToggle');
+        if (t) t.checked = true;
+        refreshModalUI();
+        checkAndNotify();
+      }
+    });
+  }
+
+  // Проверка при загрузке + каждые 30 минут
+  setTimeout(() => { updateBadge(); checkAndNotify(); }, 2000);
+  setInterval(() => { updateBadge(); checkAndNotify(); }, 30 * 60 * 1000);
+
+  // Обновлять бейдж когда renderTracker обновляет данные
+  const _orig = window.renderTracker;
+  window.renderTracker = function() {
+    if (_orig) _orig.apply(this, arguments);
+    updateBadge();
+  };
 })();
 
 // ===== PWA SERVICE WORKER =====
