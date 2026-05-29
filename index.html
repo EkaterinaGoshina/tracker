@@ -1190,10 +1190,14 @@ const jobMap = {};
     const allPl = plLs(PK);
     rows.sort((a, b) => {
       const pa = allPl[a.url] || {}, pb = allPl[b.url] || {};
-      // 1. Приоритетные выше обычных
+      // 1. Игнор/отказ — в самый низ
+      const dead = r => ['reject','ignore'].includes((allPl[r.url]||{}).result);
+      const deadA = dead(a) ? 1 : 0, deadB = dead(b) ? 1 : 0;
+      if (deadB !== deadA) return deadA - deadB;
+      // 2. Приоритетные выше обычных (внутри своей группы)
       const prioA = pa.priority ? 1 : 0, prioB = pb.priority ? 1 : 0;
       if (prioB !== prioA) return prioB - prioA;
-      // 2. Внутри группы — новее (по дате отклика или добавления) сверху
+      // 3. Внутри группы — новее (по дате отклика или добавления) сверху
       const dateA = pa.appliedDate || pa.addedAt || '';
       const dateB = pb.appliedDate || pb.addedAt || '';
       if (dateB > dateA) return 1;
