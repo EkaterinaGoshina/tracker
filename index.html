@@ -1621,11 +1621,13 @@ const jobMap = {};
       const lastNotified = notified[url] || 0;
       if (lastNotified && (now - lastNotified) < renotifyAfter) continue;
       try {
-        new Notification('⏰ Нет ответа от ' + name, {
-          body: 'Прошло ' + daysAgo + ' дн. — пора написать снова?',
+        const n = new Notification('⏰ Нет ответа от ' + name, {
+          body: 'Прошло ' + daysAgo + ' дн. — нажми чтобы открыть вакансию',
           icon: '/tracker/icon-192.png',
           tag: 'remind-' + encodeURIComponent(url),
+          requireInteraction: true,
         });
+        n.onclick = () => { window.open(url, '_blank'); n.close(); };
         notified[url] = now;
         changed = true;
       } catch(e) {}
