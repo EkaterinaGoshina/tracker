@@ -229,6 +229,7 @@ body {
 .card-badge-status-hr    { background: #eef0ff; color: #3730a3; border-color: #c7d2fe; }
 .card-badge-status-tech  { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
 .card-badge-status-final { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.card-badge-followup     { background: #e8f4ff; color: #0055b3; border-color: #b3d4ff; }
 
 /* ===== CUSTOM DATE PICKER ===== */
 .dp-popup {
@@ -978,6 +979,16 @@ const jobMap = {};
         '</div>'+
 
         '<div class="detail-section">'+
+          '<div class="detail-section-label">Написала повторно</div>'+
+          '<div class="date-wrap">'+
+            '<button class="date-btn'+(p.followUpDate?' filled':'')+' dm-dp-trigger" data-field="followUpDate" data-val="'+(p.followUpDate||'')+'">'+
+              (p.followUpDate ? '📩 '+plEsc(fmtPlDate(p.followUpDate)) : '📩 отметить дату')+
+            '</button>'+
+            (p.followUpDate ? '<button class="date-clr dm-date-clr" data-field="followUpDate">✕</button>' : '')+
+          '</div>'+
+        '</div>'+
+
+        '<div class="detail-section">'+
           '<div class="detail-section-label">Итог</div>'+
           '<select class="result-sel" id="dm-result">'+
             '<option value="">—</option>'+
@@ -1366,6 +1377,7 @@ const jobMap = {};
       else if (p.interviewStage === 'final') statusBadge = '<span class="card-badge card-badge-status-final">Финал</span>';
 
       const sourceBadge = r.source ? '<span class="card-badge card-badge-source">'+plEsc(plSrcLabel(r.source))+'</span>' : '';
+      const followUpBadge = p.followUpDate ? '<span class="card-badge card-badge-followup">📩 '+plEsc(fmtPlDate(p.followUpDate))+'</span>' : '';
 
       // Обрезаем URL до читаемого вида если title — это URL
       const rawTitle = String(p.title || r.title || r.url || '');
@@ -1380,7 +1392,7 @@ const jobMap = {};
         '</div>'+
         '<div class="card-spacer"></div>'+
         '<div class="card-title">'+plEsc(displayTitle)+'</div>'+
-        '<div class="card-bottom-row">'+sourceBadge+statusBadge+'</div>'+
+        '<div class="card-bottom-row">'+sourceBadge+statusBadge+followUpBadge+'</div>'+
       '</div>';
     }).join('');
 
