@@ -786,10 +786,10 @@ const jobMap = {};
     const p = plLs(PK)[detailUrl] || {};
     const allRows = getRows();
     const r = allRows.find(x => x.url === detailUrl) || { url: detailUrl, title: detailUrl, source: '' };
-    const rawTitle2 = p.title || r.title || detailUrl;
+    const rawTitle2 = String(p.title || r.title || detailUrl || '');
     const displayTitle = rawTitle2.startsWith('http')
       ? (p.company || source || (() => { try { return new URL(rawTitle2).hostname.replace('www.',''); } catch { return rawTitle2; } })())
-      : rawTitle2;
+      : (rawTitle2 || detailUrl);
     const company = p.company || '';
     const source = p.source || r.source || '';
 
@@ -1240,7 +1240,7 @@ const jobMap = {};
       const sourceBadge = r.source ? '<span class="card-badge card-badge-source">'+plEsc(plSrcLabel(r.source))+'</span>' : '';
 
       // Обрезаем URL до читаемого вида если title — это URL
-      const rawTitle = p.title || r.title || r.url;
+      const rawTitle = String(p.title || r.title || r.url || '');
       const displayTitle = rawTitle.startsWith('http') ? (p.company || r.source || rawTitle) : rawTitle;
 
       return '<div class="'+cardCls+'" data-url="'+plEsc(r.url)+'">'+
@@ -1256,10 +1256,12 @@ const jobMap = {};
       '</div>';
     }).join('');
 
-    // Attach click handlers
-    grid.querySelectorAll('.job-card').forEach(card => {
-      card.addEventListener('click', () => openDetail(card.dataset.url));
-    });
+    // Event delegation — один обработчик на весь grid, не теряется при ре-рендере
+    grid.onclick = e => {
+      const card = e.target.closest('.job-card');
+      if (!card || !card.dataset.url) return;
+      try { openDetail(card.dataset.url); } catch(err) { console.error('openDetail error:', err); }
+    };
   }
 
   window.renderTracker = renderTracker;
