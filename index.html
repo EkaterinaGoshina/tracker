@@ -1475,11 +1475,26 @@ const jobMap = {};
     if (hhMatch) {
       setStatus('⏳ Загружаю данные с hh.ru…');
       fetchTimer = setTimeout(async () => {
-        try {
-          const res = await fetch('https://api.hh.ru/vacancies/' + hhMatch[1]);
-          if (res.status === 404) throw new Error('archived');
-          if (!res.ok) throw new Error();
-          const data = await res.json();
+        const vacId = hhMatch[1];
+        const endpoints = [
+          'https://api.hh.ru/vacancies/' + vacId,
+          'https://corsproxy.io/?url=' + encodeURIComponent('https://api.hh.ru/vacancies/' + vacId),
+        ];
+        let data = null;
+        let lastErr = null;
+        for (const ep of endpoints) {
+          try {
+            const res = await fetch(ep, { signal: AbortSignal.timeout(8000) });
+            if (res.status === 404) throw new Error('archived');
+            if (!res.ok) continue;
+            data = await res.json();
+            break;
+          } catch(err) {
+            if (err.message === 'archived') { lastErr = err; break; }
+            lastErr = err;
+          }
+        }
+        if (data) {
           fetchedData = {
             title:   data.name || '',
             company: data.employer?.name || '',
@@ -1487,9 +1502,9 @@ const jobMap = {};
           };
           document.getElementById('m-manual-fields').style.display = 'none';
           setStatus('✓ ' + fetchedData.title + (fetchedData.company ? ' · ' + fetchedData.company : ''), true);
-        } catch(err) {
+        } else {
           fetchedData = { title: '', company: '', source: 'hh.ru' };
-          const msg = err.message === 'archived'
+          const msg = lastErr?.message === 'archived'
             ? 'Вакансия архивирована — введи название вручную'
             : 'Не удалось загрузить — введи название вручную';
           setStatus(msg, false);
