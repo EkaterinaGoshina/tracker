@@ -915,12 +915,12 @@ const jobMap = {};
     const p = plLs(PK)[detailUrl] || {};
     const allRows = getRows();
     const r = allRows.find(x => x.url === detailUrl) || { url: detailUrl, title: detailUrl, source: '' };
-    const rawTitle2 = String(p.title || r.title || detailUrl || '');
-    const displayTitle = rawTitle2.startsWith('http')
-      ? (p.company || source || (() => { try { return new URL(rawTitle2).hostname.replace('www.',''); } catch { return rawTitle2; } })())
-      : (rawTitle2 || detailUrl);
     const company = p.company || '';
     const source = p.source || r.source || '';
+    const rawTitle2 = String(p.title || r.title || detailUrl || '');
+    const displayTitle = rawTitle2.startsWith('http')
+      ? (company || source || (() => { try { return new URL(rawTitle2).hostname.replace('www.',''); } catch { return rawTitle2; } })())
+      : (rawTitle2 || detailUrl);
 
     const TEST_STAGES = ['получила','делаю','отправила','не было'];
     const STAGE_CLS = { 'получила': 'got', 'делаю': 'doing', 'отправила': 'sent', 'не было': 'none' };
